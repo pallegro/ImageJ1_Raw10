@@ -1,8 +1,7 @@
-package ij.plugin;
-
 import ij.*;
 import ij.io.*;
-import ij.process.*;
+import ij.plugin.*;
+//import ij.process.*;
 import java.io.*;
 
 /**
@@ -55,21 +54,20 @@ public class Raw10_Reader_ extends ImagePlus implements PlugIn {
     }
 
     public ImageStack openFile(String path) throws IOException {
-        InputStream s = new new FileInputStream(path);
+        InputStream s = new FileInputStream(path);
         try {
 			final int magic = s.read() | s.read() << 8 | s.read() << 16 | s.read() << 24;
-			if (magic != 0x10101010) { IJ.showMessage("Raw10 Reader", "Invalid magic"); return; }
+			if (magic != 0x10101010) throw new IOException("Invalid Raw10 magic");
 			final int nslice = s.read() | s.read() << 8 | s.read() << 16 | s.read() << 24;
 			final int height = s.read() | s.read() << 8 | s.read() << 16 | s.read() << 24;
 			final int width  = s.read() | s.read() << 8 | s.read() << 16 | s.read() << 24;
-			if (nslice > 1023 | height > 65355 | width > 65355) {
-				IJ.showMessage("Raw10 Reader", "Invalid image dimensions"); return;
-			}
+			if (nslice > 1023 | height > 65355 | width > 65355)
+				throw new IOException("Invalid Raw10 image dimensions");
 			ImageStack stack = new ImageStack(width, height);
 			final int width_bytes = width + (width >> 2); //10-bits / 8 bits/byte
 			final int npixels = width * height;
 			final byte[] buf = new byte[width_bytes];
-			for (int slice=0; slice<nslice; slice++) {
+			for (int slice_idx=0; slice_idx < nslice; slice_idx++) {
 				byte[] slice = new byte[npixels];
 				for (int i=0; i < npixels; ) {
 					s.read(buf);
@@ -83,6 +81,7 @@ public class Raw10_Reader_ extends ImagePlus implements PlugIn {
 				}
 				stack.addSlice("", slice);
 			}
+			return stack;
 		} finally {
             if (s!=null) s.close();
         }

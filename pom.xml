@@ -18,12 +18,12 @@
 
 	<name>Raw10 Format</name>
 	<description>ImageJ packed 10-bit raw plugin</description>
-	<!--url>http://mycompany.com/imagej/process-pixels/</url-->
-	<!--inceptionYear>2012</inceptionYear-->
-	<!--organization>
+	<url>https://github.com/pallegro/ImageJ1_Raw10</url>
+	<inceptionYear>2017</inceptionYear>
+	<organization>
 		<name>My Company</name>
 		<url>http://mycompany.com/</url>
-	</organization-->
+	</organization>
 	<licenses>
 		<license>
 			<name>Simplified BSD License</name>
@@ -31,11 +31,12 @@
 		</license>
 	</licenses>
 
-	<!--developers>
+	<developers>
 		<developer>
-			<id>ctrueden</id>
-			<name>Curtis Rueden</name>
-			<url>http://imagej.net/User:Rueden</url>
+			<id>palelgro</id>
+			<name>Paul Hollensen</name>
+			<!--url>http://imagej.net/User:Rueden</url-->
+			<url>https://github.com/pallegro</url>
 			<roles>
 				<role>lead</role>
 				<role>developer</role>
@@ -48,12 +49,9 @@
 	</developers>
 	<contributors>
 		<contributor>
-			<name>Johannes Schindelin</name>
-			<url>http://imagej.net/User:Schindelin</url>
-			<roles><role>founder</role></roles>
-			<properties><id>dscho</id></properties>
+			<name>None</name>
 		</contributor>
-	</contributors-->
+	</contributors>
 	<mailingLists>
 		<mailingList>
 			<name>ImageJ Forum</name>
@@ -76,10 +74,10 @@
 	</ciManagement>
 
 	<properties>
-		<package-name>imagej</package-name>
-		<main-class>imagej.Raw10_Reader_</main-class>
+		<!--package-name>imagej</package-name-->
+		<main-class><!--imagej.-->Raw10_Reader_</main-class>
 		<license.licenseName>bsd_2</license.licenseName>
-		<!--license.copyrightOwners>My Company, Inc.</license.copyrightOwners-->
+		<license.copyrightOwners>N/A</license.copyrightOwners>
 	</properties>
 
 	<dependencies>
