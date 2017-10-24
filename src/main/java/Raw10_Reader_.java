@@ -2,7 +2,8 @@ import ij.*;
 import ij.io.*;
 import ij.plugin.*;
 import java.io.*;
-
+import java.nio.*;
+import java.nio.channels.FileChannel;
 /**
  * Opens raw 10-bit image sequences.
  * <p/>
@@ -68,22 +69,28 @@ public class Raw10_Reader_ extends ImagePlus implements PlugIn {
 			final int npixels = width * height;
 			final byte[] buf = new byte[row_bytes];
 			for (int slice_idx=0; slice_idx < nslice; slice_idx++) {
-				byte[] slice = new byte[npixels];
-				//ImageProcessor ip = new ByteProcessor(width, height, slice, null);
+			//	byte[] slice = new byte[npixels];
+				short[] slice = new short[npixels];
 				for (int i=0; i < npixels; ) {
 					//is.read(buf);
 					int count = 0;
 					while (count < row_bytes && count >= 0)
 						count = is.read(buf, count, row_bytes - count);
 					if (count != row_bytes)
-						throw new IOException("Read " + count + " of " + row_bytes + " bytes.");
+						throw new IOException("Error reading from " + path);
 					for (int j=0; j < row_bytes; j+=5, i+=4) {
-						//2:10, 12:20, 22:30, 32:40
-						//Loop around shift?? Really??
+					/*	//2:10, 12:20, 22:30, 32:40
+						//Loop around shift?? Really?!?
 						slice[i+0] = (byte)(((buf[j+0] & 0xFC) >> 2) | ((buf[j+1] & 0x03) << 6));
 						slice[i+1] = (byte)(((buf[j+1] & 0xF0) >> 4) | ((buf[j+2] & 0x0F) << 4));
 						slice[i+2] = (byte)(((buf[j+2] & 0xC0) >> 6) | ((buf[j+3] & 0x3F) << 2));
-						slice[i+3] =          buf[j+4];
+						slice[i+3] =          buf[j+4]; */
+						//0:10, 10:20, 20:30, 30:40 -> 6:16
+						int x0=buf[j+0], x1=buf[j+1], x2=buf[j+2], x3=buf[j+3], x4=buf[j+4];
+						slice[i+0] = (short)(((x0 & 0xFF) << 6) | ((x1 & 0x03) << 14));
+						slice[i+1] = (short)(((x1 & 0xFC) << 4) | ((x2 & 0x0F) << 12));
+						slice[i+2] = (short)(((x2 & 0xF0) << 2) | ((x3 & 0x3F) << 10));
+						slice[i+3] = (short)(( x3 & 0xC0      ) | ((x4 & 0xFF) <<  8));
 					}
 				}
 				stack.addSlice("", slice);
