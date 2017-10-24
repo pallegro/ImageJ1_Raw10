@@ -1,7 +1,6 @@
 import ij.*;
 import ij.io.*;
 import ij.plugin.*;
-//import ij.process.*;
 import java.io.*;
 
 /**
@@ -46,7 +45,7 @@ public class Raw10_Reader_ extends ImagePlus implements PlugIn {
         }
         setStack(name, stack);
         FileInfo fi = new FileInfo();
-        fi.fileFormat = FileInfo.RAW;//????
+        //fi.fileFormat = FileInfo.RAW;//????
         fi.directory = directory;
         fi.fileName = name;
         setFileInfo(fi);
@@ -54,36 +53,44 @@ public class Raw10_Reader_ extends ImagePlus implements PlugIn {
     }
 
     public ImageStack openFile(String path) throws IOException {
-        InputStream s = new FileInputStream(path);
+        InputStream is = new FileInputStream(path);
         try {
-			final int magic = s.read() | s.read() << 8 | s.read() << 16 | s.read() << 24;
-			if (magic != 0x10101010) throw new IOException("Invalid Raw10 magic");
-			final int nslice = s.read() | s.read() << 8 | s.read() << 16 | s.read() << 24;
-			final int height = s.read() | s.read() << 8 | s.read() << 16 | s.read() << 24;
-			final int width  = s.read() | s.read() << 8 | s.read() << 16 | s.read() << 24;
-			if (nslice > 1023 | height > 65355 | width > 65355)
-				throw new IOException("Invalid Raw10 image dimensions");
-			ImageStack stack = new ImageStack(width, height);
-			final int width_bytes = width + (width >> 2); //10-bits / 8 bits/byte
+			final byte[] hdr = new byte[16];
+			is.read(hdr);
+			final int magic  = hdr[ 0] | (hdr[ 1]<<8) | (hdr[ 2]<<16) | (hdr[ 3]<<24),
+			          nslice = hdr[ 4] | (hdr[ 5]<<8) | (hdr[ 6]<<16) | (hdr[ 7]<<24),
+					  height = hdr[ 8] | (hdr[ 9]<<8) | (hdr[10]<<16) | (hdr[11]<<24),
+					  width  = hdr[12] | (hdr[13]<<8) | (hdr[14]<<16) | (hdr[15]<<24);
+			if (magic != 0x10101010 | nslice > 65355 | height > 65355 | width > 65355)
+				throw new IOException("Invalid Raw10 image");
+			ImageStack stack = new ImageStack(width, height); //, nslice);
+			final int row_bytes = width + (width >> 2);
 			final int npixels = width * height;
-			final byte[] buf = new byte[width_bytes];
+			final byte[] buf = new byte[row_bytes];
 			for (int slice_idx=0; slice_idx < nslice; slice_idx++) {
 				byte[] slice = new byte[npixels];
+				//ImageProcessor ip = new ByteProcessor(width, height, slice, null);
 				for (int i=0; i < npixels; ) {
-					s.read(buf);
-					for (int j=0; j < width_bytes; j+=5, i+=4) {
+					//is.read(buf);
+					int count = 0;
+					while (count < row_bytes && count >= 0)
+						count = is.read(buf, count, row_bytes - count);
+					if (count != row_bytes)
+						throw new IOException("Read " + count + " of " + row_bytes + " bytes.");
+					for (int j=0; j < row_bytes; j+=5, i+=4) {
 						//2:10, 12:20, 22:30, 32:40
-						slice[i+0] = (byte)((buf[j+0] >> 2) | ((buf[j+1] << 6) & 255));
-						slice[i+1] = (byte)((buf[j+1] >> 4) | ((buf[j+2] << 4) & 255));
-						slice[i+2] = (byte)((buf[j+2] >> 6) | ((buf[j+3] << 2) & 255));
-						slice[i+3] = buf[j+4];
+						//Loop around shift?? Really??
+						slice[i+0] = (byte)(((buf[j+0] & 0xFC) >> 2) | ((buf[j+1] & 0x03) << 6));
+						slice[i+1] = (byte)(((buf[j+1] & 0xF0) >> 4) | ((buf[j+2] & 0x0F) << 4));
+						slice[i+2] = (byte)(((buf[j+2] & 0xC0) >> 6) | ((buf[j+3] & 0x3F) << 2));
+						slice[i+3] =          buf[j+4];
 					}
 				}
 				stack.addSlice("", slice);
 			}
 			return stack;
 		} finally {
-            if (s!=null) s.close();
+            if (is!=null) is.close();
         }
     }
 }
